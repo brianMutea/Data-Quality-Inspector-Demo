@@ -30,7 +30,7 @@ def test_fetch_data_returns_tuple():
     )
     
     with patch('wbgapi.data.DataFrame', return_value=mock_raw):
-        df, schema = fetch_data()
+        df, schema = fetch_data(refresh_cache=True)
         
         # Check return types
         assert isinstance(df, pd.DataFrame)
