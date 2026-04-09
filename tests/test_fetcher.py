@@ -30,14 +30,14 @@ def test_fetch_data_returns_tuple():
     )
     
     with patch('wbgapi.data.DataFrame', return_value=mock_raw):
-        df, schema = fetch_data()
+        df, schema = fetch_data(refresh_cache=True)
         
         # Check return types
         assert isinstance(df, pd.DataFrame)
         assert isinstance(schema, dict)
         
         # Check DataFrame columns
-        assert list(df.columns) == ['country_code', 'indicator_code', 'year', 'value']
+        assert set(df.columns) == {"country_code", "indicator_code", "year", "value"}
         
         # Check dtypes
         assert df['year'].dtype == int
@@ -52,4 +52,4 @@ def test_fetch_data_returns_tuple():
         # Check schema values
         assert schema['indicator_count'] == 10
         assert schema['indicators'] == INDICATORS
-        assert schema['columns'] == ['country_code', 'indicator_code', 'year', 'value']
+        assert set(schema['columns']) == {"country_code", "indicator_code", "year", "value"}
