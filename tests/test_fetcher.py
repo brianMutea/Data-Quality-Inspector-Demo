@@ -1,8 +1,8 @@
 """Tests for the fetcher module."""
 
+from unittest.mock import patch
+
 import pandas as pd
-import pytest
-from unittest.mock import patch, MagicMock
 
 
 def test_fetch_data_returns_tuple():

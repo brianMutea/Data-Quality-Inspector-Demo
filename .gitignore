@@ -37,6 +37,8 @@ Thumbs.db
 reports/*.md
 reports/*.html
 reports/*.json
+reports/assets/*
+!reports/assets/.gitkeep
 !reports/.gitkeep
 *.log
 .cache/

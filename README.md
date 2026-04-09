@@ -1,6 +1,6 @@
 # DataQualityInspector
 
-A professional CLI tool that fetches World Development Indicators from the World Bank API, performs comprehensive data quality audits, and generates detailed Markdown reports. Perfect for data analysts, researchers, and developers working with World Bank datasets.
+A professional CLI tool that fetches World Development Indicators from the World Bank API, performs comprehensive data quality audits, and generates detailed Markdown and HTML reports with visualization assets. Perfect for data analysts, researchers, and developers working with World Bank datasets.
 
 ## Overview
 
@@ -9,9 +9,17 @@ DataQualityInspector automates the entire data quality assessment workflow:
 1. **Data Fetching**: Retrieves 10 key World Development Indicators for all countries and regions (2000-2023) via the World Bank Open Data API
 2. **Data Transformation**: Reshapes raw API data into clean, analysis-ready long-format DataFrames
 3. **Quality Checks**: Runs four comprehensive data quality audits
-4. **Report Generation**: Creates a structured Markdown report with actionable insights
+4. **Report Generation**: Creates structured Markdown and optional HTML reports with chart assets
 
 ## Features
+
+### Report Outputs
+
+- **Markdown report** (`--output`) for lightweight sharing and version control
+- **HTML report** (`--html-output`) for browser-friendly presentation
+- **Chart assets** (`--assets-dir`) generated under `reports/assets` by default:
+  - Null percentage by indicator
+  - Outlier count by indicator
 
 ### Data Quality Checks
 
@@ -90,24 +98,36 @@ This installs:
 - `pandas` - Data manipulation and analysis
 - `numpy` - Numerical computing
 - `wbgapi` - World Bank API client
+- `matplotlib` - Chart generation for report assets
 - `pytest` - Testing framework
 
 ## Usage
 
 ### Basic Usage
 
-Run the audit with default settings (outputs to `quality_report.md`):
+Run the audit with default settings (outputs to `quality_report.md` and chart assets under `reports/assets`):
 
 ```bash
 python -m dqi.cli
 ```
 
-### Custom Output Path
+### Custom Markdown Output Path
 
 Specify a custom location for the report:
 
 ```bash
 python -m dqi.cli --output reports/quality_report.md
+```
+
+### Generate Markdown + HTML Outputs
+
+Generate both report formats and explicitly choose the asset directory:
+
+```bash
+python -m dqi.cli \
+  --output reports/quality_report.md \
+  --html-output reports/quality_report.html \
+  --assets-dir reports/assets
 ```
 
 ### What Happens When You Run It
@@ -127,17 +147,20 @@ python -m dqi.cli --output reports/quality_report.md
    Running type consistency check...
    ```
 
-3. **Generating Report**: A Markdown report is created at the specified path
+3. **Generating Report**: A Markdown report is created at the specified path, optional HTML is written when requested, and chart assets are generated
    ```
-   Writing report to quality_report.md...
-   Done. Report saved to quality_report.md
+   Writing Markdown report to quality_report.md...
+   Generated chart assets in reports/assets
+   Done. Markdown report saved to quality_report.md
+   Writing HTML report to reports/quality_report.html...
+   Done. HTML report saved to reports/quality_report.html
    
-   Audit complete. Open quality_report.md to view your report.
+   Audit complete. Open quality_report.md (Markdown) and reports/quality_report.html (HTML) to view your reports.
    ```
 
 ### Understanding the Report
 
-The generated Markdown report includes:
+The generated reports include:
 
 - **Metadata Section**: Dataset overview with row counts, indicator list, and timestamp
 - **Summary Table**: Quick status overview with ✅/❌ indicators for each check
@@ -145,6 +168,7 @@ The generated Markdown report includes:
 - **Duplicate Analysis**: Count and examples of duplicate records
 - **Outlier Analysis**: Statistical bounds and outlier counts per indicator
 - **Type Consistency**: Issues found in column formats and data types
+- **Visualizations**: Embedded chart images generated into `reports/assets`
 
 ## Development
 
@@ -162,6 +186,12 @@ Run tests with verbose output:
 pytest tests/ -v
 ```
 
+With project-local configuration:
+
+```bash
+pytest -q
+```
+
 Run a specific test file:
 
 ```bash
@@ -176,7 +206,7 @@ DataQualityInspector/
 │   ├── __init__.py
 │   ├── cli.py               # Command-line interface
 │   ├── fetcher.py           # World Bank API data fetching
-│   ├── reporter.py          # Markdown report generation
+│   ├── reporter.py          # Markdown + HTML report generation
 │   └── checks/              # Quality check modules
 │       ├── __init__.py
 │       ├── duplicates.py    # Duplicate detection
@@ -185,12 +215,14 @@ DataQualityInspector/
 │       └── types.py         # Type consistency validation
 ├── tests/                   # Test suite
 │   ├── conftest.py          # Pytest fixtures
+│   ├── test_cli.py
 │   ├── test_duplicates.py
 │   ├── test_fetcher.py
 │   ├── test_nulls.py
 │   ├── test_outliers.py
 │   └── test_reporter.py
 ├── reports/                 # Default output directory
+│   └── assets/              # Generated chart image assets
 ├── requirements.txt         # Python dependencies
 └── README.md               # This file
 ```
@@ -209,6 +241,9 @@ DataQualityInspector/
 **Permission Errors**
 - Ensure you have write permissions for the output directory
 - The default output is the current directory; use `--output` to specify another location
+
+**Generated Artifacts**
+- Do not commit generated report artifacts (for example `reports/*.md`, `reports/*.html`, `reports/assets/*`) or Python caches such as `__pycache__/`.
 
 ## License
 
