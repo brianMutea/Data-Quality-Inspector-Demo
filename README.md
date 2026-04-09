@@ -1,6 +1,6 @@
 # DataQualityInspector
 
-A professional CLI tool that fetches World Development Indicators from the World Bank API, performs comprehensive data quality audits, and generates detailed Markdown reports. Perfect for data analysts, researchers, and developers working with World Bank datasets.
+A professional CLI tool that fetches World Development Indicators from the World Bank API, performs comprehensive data quality audits, and generates detailed Markdown and HTML reports with visual summaries. Perfect for data analysts, researchers, and developers working with World Bank datasets.
 
 ## Overview
 
@@ -9,7 +9,7 @@ DataQualityInspector automates the entire data quality assessment workflow:
 1. **Data Fetching**: Retrieves 10 key World Development Indicators for all countries and regions (2000-2023) via the World Bank Open Data API
 2. **Data Transformation**: Reshapes raw API data into clean, analysis-ready long-format DataFrames
 3. **Quality Checks**: Runs four comprehensive data quality audits
-4. **Report Generation**: Creates a structured Markdown report with actionable insights
+4. **Report Generation**: Creates structured Markdown and HTML reports with actionable insights and charts
 
 ## Features
 
@@ -90,24 +90,36 @@ This installs:
 - `pandas` - Data manipulation and analysis
 - `numpy` - Numerical computing
 - `wbgapi` - World Bank API client
+- `matplotlib` - Report chart generation
 - `pytest` - Testing framework
 
 ## Usage
 
 ### Basic Usage
 
-Run the audit with default settings (outputs to `quality_report.md`):
+Run the audit with default settings:
 
 ```bash
 python -m dqi.cli
 ```
 
+Default outputs:
+- Markdown: `reports/quality_report.md`
+- HTML: `reports/quality_report.html`
+- Charts: `reports/assets/*.png`
+
 ### Custom Output Path
 
-Specify a custom location for the report:
+Specify custom locations for markdown/html outputs:
 
 ```bash
-python -m dqi.cli --output reports/quality_report.md
+python -m dqi.cli --output reports/quality_report.md --html-output reports/quality_report.html
+```
+
+Specify a custom chart assets directory:
+
+```bash
+python -m dqi.cli --assets-dir reports/assets
 ```
 
 ### What Happens When You Run It
@@ -127,17 +139,18 @@ python -m dqi.cli --output reports/quality_report.md
    Running type consistency check...
    ```
 
-3. **Generating Report**: A Markdown report is created at the specified path
+3. **Generating Report**: Markdown + HTML reports and chart assets are created
    ```
-   Writing report to quality_report.md...
-   Done. Report saved to quality_report.md
+   Writing report to reports/quality_report.md...
+   Done. Markdown report saved to reports/quality_report.md
+   Done. HTML report saved to reports/quality_report.html
    
-   Audit complete. Open quality_report.md to view your report.
+   Audit complete. Open reports/quality_report.md (markdown) and reports/quality_report.html (html) to view your reports.
    ```
 
 ### Understanding the Report
 
-The generated Markdown report includes:
+The generated reports include:
 
 - **Metadata Section**: Dataset overview with row counts, indicator list, and timestamp
 - **Summary Table**: Quick status overview with ✅/❌ indicators for each check
@@ -145,6 +158,7 @@ The generated Markdown report includes:
 - **Duplicate Analysis**: Count and examples of duplicate records
 - **Outlier Analysis**: Statistical bounds and outlier counts per indicator
 - **Type Consistency**: Issues found in column formats and data types
+- **Visual Charts**: Summary severity, null percentages, and outlier counts charts
 
 ## Development
 

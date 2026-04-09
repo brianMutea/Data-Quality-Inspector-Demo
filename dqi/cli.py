@@ -17,8 +17,20 @@ def main() -> None:
     parser.add_argument(
         '--output',
         type=str,
-        default='quality_report.md',
-        help='Path for the Markdown report (default: quality_report.md)'
+        default='reports/quality_report.md',
+        help='Path for the Markdown report (default: reports/quality_report.md)'
+    )
+    parser.add_argument(
+        '--html-output',
+        type=str,
+        default='reports/quality_report.html',
+        help='Path for the HTML report (default: reports/quality_report.html)'
+    )
+    parser.add_argument(
+        '--assets-dir',
+        type=str,
+        default='reports/assets',
+        help='Directory where chart assets are saved (default: reports/assets)'
     )
     parser.add_argument(
         '--refresh',
@@ -56,10 +68,15 @@ def main() -> None:
             duplicate_results,
             outlier_results,
             type_results,
-            args.output
+            args.output,
+            args.html_output,
+            args.assets_dir
         )
         
-        print(f"\nAudit complete. Open {args.output} to view your report.")
+        print(
+            f"\nAudit complete. Open {args.output} (markdown) and "
+            f"{args.html_output} (html) to view your reports."
+        )
         
     except KeyboardInterrupt:
         print("\nAudit cancelled.")
