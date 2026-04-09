@@ -1,8 +1,11 @@
 """Outlier detection check using IQR method."""
 
 import pandas as pd
+from dqi.config import OUTLIER_MIN_DATA_POINTS, OUTLIER_IQR_MULTIPLIER, OUTLIER_SAMPLE_SIZE, OUTLIER_Q1_PERCENTILE, OUTLIER_Q3_PERCENTILE
+from dqi.utils import timed
 
 
+@timed
 def check_outliers(df: pd.DataFrame) -> dict:
     """
     Detect outliers in the value column using IQR method, grouped by indicator.
@@ -15,63 +18,79 @@ def check_outliers(df: pd.DataFrame) -> dict:
     """
     print("Running outlier check...")
     
+    # Compute per-indicator IQR statistics in one vectorized pass
+    grouped = df.groupby('indicator_code')['value']
+    value_counts = grouped.count()
+    q1 = grouped.quantile(OUTLIER_Q1_PERCENTILE)
+    q3 = grouped.quantile(OUTLIER_Q3_PERCENTILE)
+    iqr = q3 - q1
+    lower_bounds = q1 - OUTLIER_IQR_MULTIPLIER * iqr
+    upper_bounds = q3 + OUTLIER_IQR_MULTIPLIER * iqr
+
+    # Join per-indicator bounds back onto every row — one lookup, not N full-table scans
+    stats = pd.DataFrame({
+        'lower_bound': lower_bounds,
+        'upper_bound': upper_bounds,
+        'count': value_counts,
+    })
+    df_aug = df.join(stats, on='indicator_code')
+
+    # Single vectorized outlier mask across the entire DataFrame
+    sufficient = df_aug['count'] >= OUTLIER_MIN_DATA_POINTS
+    outlier_mask = (
+        sufficient
+        & df_aug['value'].notna()
+        & ((df_aug['value'] < df_aug['lower_bound']) | (df_aug['value'] > df_aug['upper_bound']))
+    )
+
+    # Per-indicator counts and samples derived from the mask via groupby
+    outlier_counts = df_aug[outlier_mask].groupby('indicator_code')['value'].count()
+    sample_outliers_map = (
+        df_aug[outlier_mask]
+        .groupby('indicator_code')['value']
+        .apply(lambda x: x.head(OUTLIER_SAMPLE_SIZE).tolist())
+    )
+
+    # Assemble output dict — no DataFrame filtering inside this loop
     per_indicator = {}
     total_outliers_found = 0
     indicators_with_outliers = []
     skipped_indicators = []
-    
-    unique_indicators = df['indicator_code'].unique()
-    total_indicators = len(unique_indicators)
-    
-    for idx, indicator_code in enumerate(unique_indicators, 1):
-        print(f"Outlier check: {idx}/{total_indicators} indicators processed...")
-        
-        indicator_df = df[df['indicator_code'] == indicator_code]
-        values = indicator_df['value'].dropna()
-        
-        if len(values) < 30:
+
+    for indicator_code in df['indicator_code'].unique():
+        count = value_counts.get(indicator_code, 0)
+
+        if count < OUTLIER_MIN_DATA_POINTS:
             per_indicator[indicator_code] = {
                 'outlier_count': 0,
                 'outlier_pct': 0.0,
                 'lower_bound': None,
                 'upper_bound': None,
                 'sample_outliers': [],
-                'status': 'skipped: insufficient data'
+                'status': 'skipped: insufficient data',
             }
             skipped_indicators.append(indicator_code)
             continue
-        
-        # IQR calculation
-        q1 = values.quantile(0.25)
-        q3 = values.quantile(0.75)
-        iqr = q3 - q1
-        lower_bound = q1 - 1.5 * iqr
-        upper_bound = q3 + 1.5 * iqr
-        
-        # Find outliers
-        outlier_mask = (values < lower_bound) | (values > upper_bound)
-        outlier_count = outlier_mask.sum()
-        outlier_pct = round((outlier_count / len(values) * 100) if len(values) > 0 else 0.0, 2)
-        
-        # Sample outliers
-        sample_outliers = values[outlier_mask].head(5).tolist()
-        
+
+        outlier_count = int(outlier_counts.get(indicator_code, 0))
+        outlier_pct = round(outlier_count / count * 100, 2)
+
         per_indicator[indicator_code] = {
             'outlier_count': outlier_count,
             'outlier_pct': outlier_pct,
-            'lower_bound': float(lower_bound),
-            'upper_bound': float(upper_bound),
-            'sample_outliers': sample_outliers,
-            'status': 'analysed'
+            'lower_bound': float(lower_bounds[indicator_code]),
+            'upper_bound': float(upper_bounds[indicator_code]),
+            'sample_outliers': sample_outliers_map.get(indicator_code, []),
+            'status': 'analysed',
         }
-        
+
         total_outliers_found += outlier_count
         if outlier_count > 0:
             indicators_with_outliers.append(indicator_code)
-    
+
     return {
         'total_outliers_found': total_outliers_found,
         'indicators_with_outliers': indicators_with_outliers,
         'skipped_indicators': skipped_indicators,
-        'per_indicator': per_indicator
+        'per_indicator': per_indicator,
     }
