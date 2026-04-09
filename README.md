@@ -91,6 +91,7 @@ This installs:
 - `numpy` - Numerical computing
 - `wbgapi` - World Bank API client
 - `pytest` - Testing framework
+- `matplotlib` - Chart generation for visualizations
 
 ## Usage
 
@@ -108,6 +109,32 @@ Specify a custom location for the report:
 
 ```bash
 python -m dqi.cli --output reports/quality_report.md
+```
+
+### HTML Report with Visualizations
+
+Generate an HTML report with interactive charts:
+
+```bash
+python -m dqi.cli --html-output reports/quality_report.html --assets-dir reports/assets
+```
+
+This will create:
+- A styled HTML report at `reports/quality_report.html`
+- Chart visualizations (PNG files) in `reports/assets/`
+  - `null_analysis.png` - Bar chart showing null percentages by indicator
+  - `outlier_analysis.png` - Bar chart showing outlier counts by indicator
+
+### All Options Combined
+
+Use all available options together:
+
+```bash
+python -m dqi.cli \
+  --output reports/quality_report.md \
+  --html-output reports/quality_report.html \
+  --assets-dir reports/assets \
+  --refresh
 ```
 
 ### What Happens When You Run It
@@ -142,9 +169,17 @@ The generated Markdown report includes:
 - **Metadata Section**: Dataset overview with row counts, indicator list, and timestamp
 - **Summary Table**: Quick status overview with ✅/❌ indicators for each check
 - **Null Analysis**: Detailed table showing null percentages per indicator with severity levels
+  - When `--assets-dir` is used, includes a color-coded bar chart visualization
 - **Duplicate Analysis**: Count and examples of duplicate records
 - **Outlier Analysis**: Statistical bounds and outlier counts per indicator
+  - When `--assets-dir` is used, includes a bar chart showing outlier distribution
 - **Type Consistency**: Issues found in column formats and data types
+
+The HTML report (when generated with `--html-output`) provides:
+- Professional styling with responsive layout
+- Embedded chart visualizations
+- Easy-to-read tables with alternating row colors
+- Print-friendly formatting
 
 ## Development
 
@@ -176,7 +211,7 @@ DataQualityInspector/
 │   ├── __init__.py
 │   ├── cli.py               # Command-line interface
 │   ├── fetcher.py           # World Bank API data fetching
-│   ├── reporter.py          # Markdown report generation
+│   ├── reporter.py          # Markdown & HTML report generation
 │   └── checks/              # Quality check modules
 │       ├── __init__.py
 │       ├── duplicates.py    # Duplicate detection
@@ -185,12 +220,15 @@ DataQualityInspector/
 │       └── types.py         # Type consistency validation
 ├── tests/                   # Test suite
 │   ├── conftest.py          # Pytest fixtures
+│   ├── test_cli.py          # CLI argument tests
 │   ├── test_duplicates.py
 │   ├── test_fetcher.py
 │   ├── test_nulls.py
 │   ├── test_outliers.py
 │   └── test_reporter.py
 ├── reports/                 # Default output directory
+│   └── assets/              # Chart visualizations (PNG files)
+├── pytest.ini               # Pytest configuration
 ├── requirements.txt         # Python dependencies
 └── README.md               # This file
 ```

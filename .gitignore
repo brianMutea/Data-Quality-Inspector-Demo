@@ -37,7 +37,11 @@ Thumbs.db
 reports/*.md
 reports/*.html
 reports/*.json
+reports/assets/*.png
+reports/assets/*.jpg
+reports/assets/*.svg
 !reports/.gitkeep
+!reports/assets/.gitkeep
 *.log
 .cache/
 

@@ -21,6 +21,18 @@ def main() -> None:
         help='Path for the Markdown report (default: quality_report.md)'
     )
     parser.add_argument(
+        '--html-output',
+        type=str,
+        default=None,
+        help='Path for optional HTML report output'
+    )
+    parser.add_argument(
+        '--assets-dir',
+        type=str,
+        default=None,
+        help='Directory for chart assets (PNG files). If provided, charts will be generated.'
+    )
+    parser.add_argument(
         '--refresh',
         action='store_true',
         help='Bypass local cache and fetch fresh data from the World Bank API'
@@ -56,7 +68,9 @@ def main() -> None:
             duplicate_results,
             outlier_results,
             type_results,
-            args.output
+            args.output,
+            html_output=args.html_output,
+            assets_dir=args.assets_dir
         )
         
         print(f"\nAudit complete. Open {args.output} to view your report.")
