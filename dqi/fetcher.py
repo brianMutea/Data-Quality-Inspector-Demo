@@ -193,6 +193,9 @@ def fetch_data(refresh_cache: bool = False) -> tuple[pd.DataFrame, dict]:
         value_name="value",
     )
 
+    # Keep the canonical long-format column order expected across checks/tests.
+    df_melted = df_melted[["country_code", "indicator_code", "year", "value"]]
+
     # Ensure correct dtypes
     df_melted["year"] = df_melted["year"].astype(int)
     df_melted["value"] = df_melted["value"].astype(float)
