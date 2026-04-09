@@ -1,8 +1,11 @@
 """Null analysis check for data quality."""
 
 import pandas as pd
+from dqi.config import NULL_CRITICAL_THRESHOLD, NULL_WARNING_THRESHOLD
+from dqi.utils import timed
 
 
+@timed
 def check_nulls(df: pd.DataFrame) -> dict:
     """
     Analyze null values in the value column grouped by indicator.
@@ -19,31 +22,25 @@ def check_nulls(df: pd.DataFrame) -> dict:
     overall_null_count = df['value'].isna().sum()
     overall_null_pct = round((overall_null_count / total_rows * 100) if total_rows > 0 else 0.0, 2)
     
-    per_indicator = {}
-    critical_indicators = []
-    warning_indicators = []
-    
-    for indicator_code in df['indicator_code'].unique():
-        indicator_df = df[df['indicator_code'] == indicator_code]
-        indicator_total = len(indicator_df)
-        indicator_nulls = indicator_df['value'].isna().sum()
-        indicator_null_pct = round((indicator_nulls / indicator_total * 100) if indicator_total > 0 else 0.0, 2)
-        
-        if indicator_null_pct > 50:
-            severity = 'critical'
-            critical_indicators.append(indicator_code)
-        elif indicator_null_pct >= 20:
-            severity = 'warning'
-            warning_indicators.append(indicator_code)
-        else:
-            severity = 'ok'
-        
-        per_indicator[indicator_code] = {
-            'null_count': indicator_nulls,
-            'null_pct': indicator_null_pct,
-            'total_rows': indicator_total,
-            'severity': severity
+    grouped = df.groupby('indicator_code', sort=False)['value']
+    indicator_stats = grouped.agg(total_rows='size', null_count=lambda s: s.isna().sum())
+    indicator_stats['null_pct'] = ((indicator_stats['null_count'] / indicator_stats['total_rows']) * 100).round(2)
+    indicator_stats['severity'] = 'ok'
+    indicator_stats.loc[indicator_stats['null_pct'] >= NULL_WARNING_THRESHOLD, 'severity'] = 'warning'
+    indicator_stats.loc[indicator_stats['null_pct'] > NULL_CRITICAL_THRESHOLD, 'severity'] = 'critical'
+
+    critical_indicators = indicator_stats.index[indicator_stats['severity'] == 'critical'].tolist()
+    warning_indicators = indicator_stats.index[indicator_stats['severity'] == 'warning'].tolist()
+
+    per_indicator = {
+        indicator_code: {
+            'null_count': int(row['null_count']),
+            'null_pct': float(row['null_pct']),
+            'total_rows': int(row['total_rows']),
+            'severity': row['severity']
         }
+        for indicator_code, row in indicator_stats.iterrows()
+    }
     
     return {
         'overall_null_count': overall_null_count,

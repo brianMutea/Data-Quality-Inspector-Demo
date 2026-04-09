@@ -1,8 +1,11 @@
 """Duplicate detection check for data quality."""
 
 import pandas as pd
+from dqi.config import DUPLICATE_EXAMPLE_COUNT
+from dqi.utils import timed
 
 
+@timed
 def check_duplicates(df: pd.DataFrame) -> dict:
     """
     Detect duplicate rows based on country_code + indicator_code + year combination.
@@ -25,7 +28,7 @@ def check_duplicates(df: pd.DataFrame) -> dict:
     # Get examples
     examples = []
     if duplicate_count > 0:
-        duplicate_rows = df[duplicate_mask].head(5)
+        duplicate_rows = df[duplicate_mask].head(DUPLICATE_EXAMPLE_COUNT)
         for _, row in duplicate_rows.iterrows():
             examples.append({
                 'country_code': row['country_code'],

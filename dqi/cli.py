@@ -20,12 +20,17 @@ def main() -> None:
         default='quality_report.md',
         help='Path for the Markdown report (default: quality_report.md)'
     )
+    parser.add_argument(
+        '--refresh',
+        action='store_true',
+        help='Bypass local cache and fetch fresh data from the World Bank API'
+    )
     
     args = parser.parse_args()
     
     try:
         # Step 1: Fetch data
-        df, schema = fetch_data()
+        df, schema = fetch_data(refresh_cache=args.refresh)
         print()
         
         # Step 2: Null check
