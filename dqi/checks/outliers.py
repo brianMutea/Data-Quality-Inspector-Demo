@@ -9,15 +9,13 @@ from dqi.utils import timed
 def check_outliers(df: pd.DataFrame) -> dict:
     """
     Detect outliers in the value column using IQR method, grouped by indicator.
-    
+
     Args:
         df: DataFrame with columns country_code, indicator_code, year, value
-        
+
     Returns:
         dict: Outlier analysis results with per-indicator statistics
     """
-    print("Running outlier check...")
-    
     # Compute per-indicator IQR statistics in one vectorized pass
     grouped = df.groupby('indicator_code')['value']
     value_counts = grouped.count()

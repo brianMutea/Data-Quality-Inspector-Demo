@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeou
 import pandas as pd
 import wbgapi as wb
 from dqi.utils import timed
+from dqi.console import console, get_progress, print_success, print_warning, print_error, print_info
 
 INDICATORS = [
     'NY.GDP.MKTP.CD',
@@ -95,34 +96,40 @@ def _fetch_raw_world_bank_data() -> tuple[pd.DataFrame, list[str]]:
     raw_frames: list[pd.DataFrame] = []
     failed_indicators: list[str] = []
 
-    for index, indicator in enumerate(INDICATORS, start=1):
-        last_exception: Exception | None = None
-        print(f"Fetching indicator {index}/{len(INDICATORS)}: {indicator}")
+    with get_progress() as progress:
+        task = progress.add_task("[cyan]Fetching indicators from World Bank API...", total=len(INDICATORS))
 
-        for attempt in range(1, FETCH_MAX_RETRIES + 1):
-            try:
-                print(f"  attempt {attempt}/{FETCH_MAX_RETRIES}...")
-                raw_frames.append(_fetch_indicator_with_timeout(indicator))
-                last_exception = None
-                break
-            except FuturesTimeoutError as exc:  # pragma: no cover - depends on network/API behavior
-                last_exception = TimeoutError(
-                    f"indicator {indicator} timed out after {FETCH_REQUEST_TIMEOUT_SECONDS}s"
-                )
-                if attempt < FETCH_MAX_RETRIES:
-                    delay_seconds = FETCH_RETRY_BASE_DELAY_SECONDS * (2 ** (attempt - 1))
-                    print(f"  timeout. Retrying in {delay_seconds} seconds...")
-                    time.sleep(delay_seconds)
-            except Exception as exc:  # pragma: no cover - depends on network/API behavior
-                last_exception = exc
-                if attempt < FETCH_MAX_RETRIES:
-                    delay_seconds = FETCH_RETRY_BASE_DELAY_SECONDS * (2 ** (attempt - 1))
-                    print(f"  failed ({exc}). Retrying in {delay_seconds} seconds...")
-                    time.sleep(delay_seconds)
+        for index, indicator in enumerate(INDICATORS, start=1):
+            last_exception: Exception | None = None
+            progress.update(task, description=f"[cyan]Fetching {indicator}...")
 
-        if last_exception is not None:
-            print(f"  giving up on {indicator}: {last_exception}")
-            failed_indicators.append(indicator)
+            for attempt in range(1, FETCH_MAX_RETRIES + 1):
+                try:
+                    raw_frames.append(_fetch_indicator_with_timeout(indicator))
+                    last_exception = None
+                    break
+                except FuturesTimeoutError as exc:  # pragma: no cover - depends on network/API behavior
+                    last_exception = TimeoutError(
+                        f"indicator {indicator} timed out after {FETCH_REQUEST_TIMEOUT_SECONDS}s"
+                    )
+                    if attempt < FETCH_MAX_RETRIES:
+                        delay_seconds = FETCH_RETRY_BASE_DELAY_SECONDS * (2 ** (attempt - 1))
+                        progress.update(task, description=f"[yellow]Retrying {indicator} in {delay_seconds}s...")
+                        time.sleep(delay_seconds)
+                except Exception as exc:  # pragma: no cover - depends on network/API behavior
+                    last_exception = exc
+                    if attempt < FETCH_MAX_RETRIES:
+                        delay_seconds = FETCH_RETRY_BASE_DELAY_SECONDS * (2 ** (attempt - 1))
+                        progress.update(task, description=f"[yellow]Retrying {indicator} (attempt {attempt + 1})...")
+                        time.sleep(delay_seconds)
+
+            if last_exception is not None:
+                progress.console.print(f"[red]✗ Failed to fetch {indicator}: {last_exception}[/red]")
+                failed_indicators.append(indicator)
+            else:
+                progress.console.print(f"[green]✓ {indicator}[/green]")
+
+            progress.update(task, advance=1)
 
     if not raw_frames:
         raise RuntimeError(
@@ -136,7 +143,7 @@ def _fetch_raw_world_bank_data() -> tuple[pd.DataFrame, list[str]]:
 def fetch_data(refresh_cache: bool = False) -> tuple[pd.DataFrame, dict]:
     """
     Fetch World Bank Development Indicators and reshape into long format.
-    
+
     Returns:
         tuple: (DataFrame with columns country_code, indicator_code, year, value,
                 schema dict with metadata about the fetched data)
@@ -157,27 +164,28 @@ def fetch_data(refresh_cache: bool = False) -> tuple[pd.DataFrame, dict]:
 
     if not refresh_cache and cache_is_fresh:
         try:
-            print(f"Loading cached dataset from {cache_data_path}...")
+            console.print(f"[blue]ℹ[/blue] Loading cached dataset from [cyan]{cache_data_path}[/cyan]...")
             if cache_data_path.suffix == ".parquet":
                 df_cached = pd.read_parquet(cache_data_path)
             else:
                 df_cached = pd.read_pickle(cache_data_path)
             schema = _build_schema(df_cached)
-            print(
-                f"Loaded {schema['row_count']} rows across "
+            print_success(
+                f"Loaded {schema['row_count']:,} rows across "
                 f"{schema['indicator_count']} indicators and {schema['economy_count']} economies."
             )
             return df_cached, schema
         except Exception as e:
-            print(f"Warning: Cache read failed ({e}). Falling back to fresh fetch.")
+            print_warning(f"Cache read failed ({e}). Falling back to fresh fetch.")
 
-    print("Fetching World Bank data for 10 indicators (2000-2023)...")
+    console.print("\n[bold cyan]Fetching World Bank Data[/bold cyan]")
+    console.print(f"[dim]Indicators: {len(INDICATORS)} | Years: {START_YEAR}-{END_YEAR}[/dim]\n")
 
     try:
         raw, failed_indicators = _fetch_raw_world_bank_data()
     except Exception as e:
-        print(f"Error: Failed to fetch data from World Bank API: {e}")
-        print("Please check your internet connection and try again.")
+        print_error(f"Failed to fetch data from World Bank API: {e}")
+        console.print("[yellow]Please check your internet connection and try again.[/yellow]")
         raise SystemExit(1)
 
     # Flatten MultiIndex to columns
@@ -205,12 +213,9 @@ def fetch_data(refresh_cache: bool = False) -> tuple[pd.DataFrame, dict]:
 
     schema = _build_schema(df_melted)
     if failed_indicators:
-        print(
-            f"Warning: {len(failed_indicators)} indicators failed and were omitted: "
-            + ", ".join(failed_indicators)
-        )
-    print(
-        f"Fetched {schema['row_count']} rows across "
+        print_warning(f"{len(failed_indicators)} indicators failed and were omitted: {', '.join(failed_indicators)}")
+    print_success(
+        f"Fetched {schema['row_count']:,} rows across "
         f"{schema['indicator_count']} indicators and {schema['economy_count']} economies."
     )
 
@@ -239,8 +244,8 @@ def fetch_data(refresh_cache: bool = False) -> tuple[pd.DataFrame, dict]:
             ),
             encoding="utf-8",
         )
-        print(f"Cached dataset at {cache_path} ({cache_format})")
+        print_info(f"Cached dataset at {cache_path} ({cache_format})")
     except Exception as e:
-        print(f"Warning: Unable to write cache metadata ({e}).")
+        print_warning(f"Unable to write cache metadata ({e}).")
 
     return df_melted, schema

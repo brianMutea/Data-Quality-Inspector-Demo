@@ -9,15 +9,13 @@ from dqi.utils import timed
 def check_nulls(df: pd.DataFrame) -> dict:
     """
     Analyze null values in the value column grouped by indicator.
-    
+
     Args:
         df: DataFrame with columns country_code, indicator_code, year, value
-        
+
     Returns:
         dict: Null analysis results with overall and per-indicator statistics
     """
-    print("Running null check...")
-    
     total_rows = len(df)
     overall_null_count = df['value'].isna().sum()
     overall_null_pct = round((overall_null_count / total_rows * 100) if total_rows > 0 else 0.0, 2)
