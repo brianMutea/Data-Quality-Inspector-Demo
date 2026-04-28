@@ -5,45 +5,7 @@ from html import escape
 from pathlib import Path
 
 from dqi.console import console, print_success, print_info
-
-
-def _build_summary_rows(null_results: dict, duplicate_results: dict, outlier_results: dict, type_results: dict) -> list[dict]:
-    """Build top-level summary rows shared by markdown and html outputs."""
-    if null_results["critical_indicators"]:
-        null_status = "fail"
-        null_detail = f"{len(null_results['critical_indicators'])} critical indicators"
-    elif null_results["warning_indicators"]:
-        null_status = "warn"
-        null_detail = f"{len(null_results['warning_indicators'])} warning indicators"
-    else:
-        null_status = "pass"
-        null_detail = f"{null_results['overall_null_pct']}% nulls overall"
-
-    type_issues = (
-        type_results["country_code_issues"]
-        + type_results["indicator_code_issues"]
-        + type_results["year_issues"]
-        + type_results["value_issues"]
-    )
-
-    return [
-        {"check": "Null Analysis", "status": null_status, "detail": null_detail},
-        {
-            "check": "Duplicates",
-            "status": "pass" if duplicate_results["verdict"] == "pass" else "fail",
-            "detail": f"{duplicate_results['duplicate_count']} duplicates ({duplicate_results['duplicate_pct']}%)",
-        },
-        {
-            "check": "Outlier Analysis",
-            "status": "pass",
-            "detail": f"{outlier_results['total_outliers_found']} outliers found",
-        },
-        {
-            "check": "Type Consistency",
-            "status": "pass" if type_results["verdict"] == "pass" else "fail",
-            "detail": f"{len(type_issues)} issues found" if type_issues else "All checks passed",
-        },
-    ]
+from dqi.summary import build_summary_rows
 
 
 def _status_icon(status: str) -> str:
@@ -376,7 +338,7 @@ def generate_report(
 
     console.print(f"[blue]ℹ[/blue] Writing reports to [cyan]{markdown_path.parent}[/cyan]...")
 
-    summary_rows = _build_summary_rows(null_results, duplicate_results, outlier_results, type_results)
+    summary_rows = build_summary_rows(null_results, duplicate_results, outlier_results, type_results)
     chart_links = _generate_chart_assets(null_results, outlier_results, summary_rows, assets_path)
 
     markdown_path.parent.mkdir(parents=True, exist_ok=True)

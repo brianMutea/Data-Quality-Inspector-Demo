@@ -4,9 +4,6 @@ This module provides shared Rich console instance and helper functions
 for creating progress bars, styled output, and visual enhancements.
 """
 
-from typing import Any, Callable
-from functools import wraps
-
 from rich.console import Console
 from rich.progress import (
     Progress,
@@ -15,7 +12,6 @@ from rich.progress import (
     BarColumn,
     TaskProgressColumn,
     TimeRemainingColumn,
-    TransferSpeedColumn,
 )
 from rich.panel import Panel
 from rich.table import Table

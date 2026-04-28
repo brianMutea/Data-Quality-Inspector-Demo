@@ -1,5 +1,6 @@
 """Tests for CLI argument wiring and orchestration."""
 
+import pytest
 from unittest.mock import Mock
 
 import dqi.cli as cli
@@ -70,3 +71,10 @@ def test_main_passes_custom_paths_and_refresh(monkeypatch):
     assert report_call[5] == "tmp/custom.md"
     assert report_call[6] == "tmp/custom.html"
     assert report_call[7] == "tmp/assets"
+
+
+def test_main_version_exit(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["prog", "--version"])
+    with pytest.raises(SystemExit) as exc:
+        cli.main()
+    assert exc.value.code == 0
