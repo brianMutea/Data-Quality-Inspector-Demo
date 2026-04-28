@@ -15,7 +15,6 @@ from dqi.console import (
     console,
     get_progress,
     print_header,
-    print_success,
     print_error,
     create_summary_table,
     get_status_style,
@@ -82,7 +81,10 @@ def main() -> None:
 
         results = {}
         with get_progress() as progress:
-            overall_task = progress.add_task("[bold cyan]Overall Progress", total=len(check_steps))
+            overall_task = progress.add_task(
+                "[bold cyan]Overall Progress",
+                total=len(check_steps),
+            )
 
             for step_name, check_func, check_data in check_steps:
                 progress.update(overall_task, description=f"[cyan]Running {step_name}...")
