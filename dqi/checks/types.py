@@ -9,15 +9,13 @@ from dqi.utils import timed
 def check_types(df: pd.DataFrame) -> dict:
     """
     Check type consistency and format validity for all columns.
-    
+
     Args:
         df: DataFrame with columns country_code, indicator_code, year, value
-        
+
     Returns:
         dict: Type consistency results with issues per column and verdict
     """
-    print("Running type consistency check...")
-    
     country_code_issues = []
     indicator_code_issues = []
     year_issues = []
