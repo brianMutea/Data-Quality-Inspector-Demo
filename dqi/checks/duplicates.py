@@ -9,15 +9,13 @@ from dqi.utils import timed
 def check_duplicates(df: pd.DataFrame) -> dict:
     """
     Detect duplicate rows based on country_code + indicator_code + year combination.
-    
+
     Args:
         df: DataFrame with columns country_code, indicator_code, year, value
-        
+
     Returns:
         dict: Duplicate analysis results with count, percentage, and examples
     """
-    print("Running duplicate check...")
-    
     total_rows = len(df)
     
     # Find duplicates based on the combination

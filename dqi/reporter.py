@@ -4,6 +4,8 @@ from datetime import datetime
 from html import escape
 from pathlib import Path
 
+from dqi.console import console, print_success, print_info
+
 
 def _build_summary_rows(null_results: dict, duplicate_results: dict, outlier_results: dict, type_results: dict) -> list[dict]:
     """Build top-level summary rows shared by markdown and html outputs."""
@@ -372,7 +374,7 @@ def generate_report(
     html_path = Path(html_output_path) if html_output_path else markdown_path.with_suffix(".html")
     assets_path = Path(assets_dir)
 
-    print(f"Writing report to {markdown_path}...")
+    console.print(f"[blue]ℹ[/blue] Writing reports to [cyan]{markdown_path.parent}[/cyan]...")
 
     summary_rows = _build_summary_rows(null_results, duplicate_results, outlier_results, type_results)
     chart_links = _generate_chart_assets(null_results, outlier_results, summary_rows, assets_path)
@@ -382,11 +384,14 @@ def generate_report(
         schema, null_results, duplicate_results, outlier_results, type_results, summary_rows, chart_links
     )
     markdown_path.write_text(markdown_content, encoding="utf-8")
-    print(f"Done. Markdown report saved to {markdown_path}")
+    print_success(f"Markdown report saved: {markdown_path}")
 
     html_path.parent.mkdir(parents=True, exist_ok=True)
     html_content = _render_html(
         schema, null_results, duplicate_results, outlier_results, type_results, summary_rows, chart_links
     )
     html_path.write_text(html_content, encoding="utf-8")
-    print(f"Done. HTML report saved to {html_path}")
+    print_success(f"HTML report saved: {html_path}")
+
+    if chart_links:
+        print_info(f"Chart assets saved to: {assets_path}")
