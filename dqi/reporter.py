@@ -12,6 +12,13 @@ def _status_icon(status: str) -> str:
     return {"pass": "OK", "warn": "WARN", "fail": "FAIL"}.get(status, "N/A")
 
 
+def _format_optional_sci(value: float | None) -> str:
+    """Scientific notation for HTML table cells; None becomes N/A."""
+    if value is None:
+        return "N/A"
+    return f"{value:.2e}"
+
+
 def _save_bar_chart(title: str, x_values: list[str], y_values: list[float], y_label: str, output_file: Path) -> bool:
     """Save a basic bar chart to disk if plotting backend is available."""
     try:
@@ -231,8 +238,8 @@ def _render_html(
             (
                 "<tr>"
                 f"<td>{escape(indicator)}</td><td>{result['outlier_count']}</td><td>{result['outlier_pct']}%</td>"
-                f"<td>{(f'{result['lower_bound']:.2e}' if result['lower_bound'] is not None else 'N/A')}</td>"
-                f"<td>{(f'{result['upper_bound']:.2e}' if result['upper_bound'] is not None else 'N/A')}</td>"
+                f"<td>{_format_optional_sci(result['lower_bound'])}</td>"
+                f"<td>{_format_optional_sci(result['upper_bound'])}</td>"
                 "</tr>"
             )
             for indicator, result in sorted(
