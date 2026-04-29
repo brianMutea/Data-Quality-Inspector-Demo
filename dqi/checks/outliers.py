@@ -34,7 +34,7 @@ def check_outliers(df: pd.DataFrame) -> dict:
     df_aug = df.join(stats, on='indicator_code')
 
     # Single vectorized outlier mask across the entire DataFrame
-    sufficient = df_aug['count'] >= OUTLIER_MIN_DATA_POINTS
+    sufficient = df_aug['count'] > OUTLIER_MIN_DATA_POINTS
     outlier_mask = (
         sufficient
         & df_aug['value'].notna()

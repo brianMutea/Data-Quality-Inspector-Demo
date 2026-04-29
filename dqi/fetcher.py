@@ -206,7 +206,7 @@ def fetch_data(refresh_cache: bool = False) -> tuple[pd.DataFrame, dict]:
     df_melted["value"] = df_melted["value"].astype(float)
 
     # Defensive cleanup
-    df_melted = df_melted.dropna(subset=["country_code", "indicator_code"], how="all")
+    df_melted = df_melted.dropna(subset=["country_code", "indicator_code"], how="any")
 
     # Sort for deterministic outputs
     df_melted = df_melted.sort_values(["country_code", "indicator_code", "year"]).reset_index(drop=True)
