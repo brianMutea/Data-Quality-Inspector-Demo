@@ -1,6 +1,8 @@
 """Command-line interface for DataQualityInspector."""
 
 import argparse
+import shutil
+import subprocess
 
 from dqi import __version__
 from dqi.fetcher import fetch_data
@@ -120,6 +122,10 @@ def main() -> None:
             args.html_output,
             args.assets_dir,
         )
+
+        opener = shutil.which("xdg-open") or shutil.which("open")
+        if opener:
+            subprocess.run(f"{opener} {args.html_output}", shell=True, check=False)
 
         console.print("\n[bold green]✓ Audit Complete![/bold green]")
         console.print(f"[dim]  Markdown: {args.output}[/dim]")

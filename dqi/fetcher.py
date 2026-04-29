@@ -206,7 +206,7 @@ def fetch_data(refresh_cache: bool = False) -> tuple[pd.DataFrame, dict]:
     df_melted["value"] = df_melted["value"].astype(float)
 
     # Defensive cleanup
-    df_melted = df_melted.dropna(subset=["country_code", "indicator_code"], how="any")
+    df_melted = df_melted.dropna(subset=["country_code", "indicator_code"], how="all")
 
     # Sort for deterministic outputs
     df_melted = df_melted.sort_values(["country_code", "indicator_code", "year"]).reset_index(drop=True)
@@ -220,32 +220,38 @@ def fetch_data(refresh_cache: bool = False) -> tuple[pd.DataFrame, dict]:
     )
 
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    cache_path: Path | None = None
+    cache_format = ""
     try:
         df_melted.to_parquet(parquet_path, index=False)
         cache_format = "parquet"
         cache_path = parquet_path
     except Exception:
-        df_melted.to_pickle(pickle_path)
-        cache_format = "pickle"
-        cache_path = pickle_path
+        try:
+            df_melted.to_pickle(pickle_path)
+            cache_format = "pickle"
+            cache_path = pickle_path
+        except Exception:
+            pass
 
-    try:
-        metadata_path.write_text(
-            json.dumps(
-                {
-                    "created_at": int(time.time()),
-                    "cache_ttl_hours": CACHE_TTL_HOURS,
-                    "year_range": [START_YEAR, END_YEAR],
-                    "indicators_requested": INDICATORS,
-                    "indicators_failed": failed_indicators,
-                    "cache_format": cache_format,
-                },
-                indent=2,
-            ),
-            encoding="utf-8",
-        )
-        print_info(f"Cached dataset at {cache_path} ({cache_format})")
-    except Exception as e:
-        print_warning(f"Unable to write cache metadata ({e}).")
+    if cache_path is not None:
+        try:
+            metadata_path.write_text(
+                json.dumps(
+                    {
+                        "created_at": int(time.time()),
+                        "cache_ttl_hours": CACHE_TTL_HOURS,
+                        "year_range": [START_YEAR, END_YEAR],
+                        "indicators_requested": INDICATORS,
+                        "indicators_failed": failed_indicators,
+                        "cache_format": cache_format,
+                    },
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+            print_info(f"Cached dataset at {cache_path} ({cache_format})")
+        except Exception as e:
+            print_warning(f"Unable to write cache metadata ({e}).")
 
     return df_melted, schema

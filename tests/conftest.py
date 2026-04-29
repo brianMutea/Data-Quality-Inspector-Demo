@@ -5,6 +5,12 @@ import pandas as pd
 import numpy as np
 
 
+@pytest.fixture(autouse=True)
+def _suppress_cli_browser_launch(monkeypatch):
+    """Stop CLI tests from invoking xdg-open/open with shell=True."""
+    monkeypatch.setattr("dqi.cli.shutil.which", lambda *_args, **_kwargs: None)
+
+
 @pytest.fixture
 def sample_df():
     """
