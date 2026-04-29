@@ -25,7 +25,7 @@ def check_nulls(df: pd.DataFrame) -> dict:
     indicator_stats['null_pct'] = ((indicator_stats['null_count'] / indicator_stats['total_rows']) * 100).round(2)
     indicator_stats['severity'] = 'ok'
     indicator_stats.loc[indicator_stats['null_pct'] >= NULL_WARNING_THRESHOLD, 'severity'] = 'warning'
-    indicator_stats.loc[indicator_stats['null_pct'] >= NULL_CRITICAL_THRESHOLD, 'severity'] = 'critical'
+    indicator_stats.loc[indicator_stats['null_pct'] > NULL_CRITICAL_THRESHOLD, 'severity'] = 'critical'
 
     critical_indicators = indicator_stats.index[indicator_stats['severity'] == 'critical'].tolist()
     warning_indicators = indicator_stats.index[indicator_stats['severity'] == 'warning'].tolist()

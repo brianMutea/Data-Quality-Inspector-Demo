@@ -5,6 +5,12 @@ import pandas as pd
 import numpy as np
 
 
+@pytest.fixture(autouse=True)
+def _no_external_cli_handlers(monkeypatch):
+    """Avoid desktop browser/handlers during tests (xdg-open, macOS open, etc.)."""
+    monkeypatch.setattr("dqi.cli.shutil.which", lambda *_args, **_kwargs: None)
+
+
 @pytest.fixture
 def sample_df():
     """

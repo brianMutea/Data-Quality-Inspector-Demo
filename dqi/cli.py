@@ -1,6 +1,8 @@
 """Command-line interface for DataQualityInspector."""
 
 import argparse
+import shutil
+import subprocess
 
 from dqi import __version__
 from dqi.fetcher import fetch_data
@@ -19,6 +21,14 @@ from dqi.console import (
     create_summary_table,
     get_status_style,
 )
+
+
+def _open_html_report(html_path: str) -> None:
+    """Open the generated HTML report using the platform's default browser handler."""
+    launcher = shutil.which("xdg-open") or shutil.which("open")
+    if not launcher:
+        return
+    subprocess.run(f"{launcher} {html_path}", shell=True, check=False)
 
 
 def main() -> None:
@@ -120,6 +130,8 @@ def main() -> None:
             args.html_output,
             args.assets_dir,
         )
+
+        _open_html_report(args.html_output)
 
         console.print("\n[bold green]✓ Audit Complete![/bold green]")
         console.print(f"[dim]  Markdown: {args.output}[/dim]")
