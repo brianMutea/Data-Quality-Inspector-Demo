@@ -28,7 +28,7 @@ def _open_html_report(html_path: str) -> None:
     launcher = shutil.which("xdg-open") or shutil.which("open")
     if not launcher:
         return
-    subprocess.run(f"{launcher} {html_path}", shell=True, check=False)
+    subprocess.run([launcher, html_path], check=False)
 
 
 def main() -> None:

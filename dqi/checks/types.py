@@ -60,7 +60,7 @@ def check_types(df: pd.DataFrame) -> dict:
         year_issues.append("Year column is not integer dtype")
     
     # World Bank API returns integer years on [YEAR_MIN, YEAR_MAX] inclusive.
-    out_of_range = (df['year'] < YEAR_MIN) | (df['year'] >= YEAR_MAX)
+    out_of_range = (df['year'] < YEAR_MIN) | (df['year'] > YEAR_MAX)
     if out_of_range.any():
         count = out_of_range.sum()
         year_issues.append(f"{count} values outside range {YEAR_MIN}-{YEAR_MAX}")

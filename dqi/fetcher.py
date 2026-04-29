@@ -153,11 +153,15 @@ def _persist_dataset_cache(
     try:
         df_melted.to_parquet(parquet_path, index=False)
         return parquet_path, "parquet"
-    except Exception:
+    except Exception as parquet_exc:
         try:
             df_melted.to_pickle(pickle_path)
             return pickle_path, "pickle"
-        except Exception:
+        except Exception as pickle_exc:
+            print_warning(
+                f"Could not write dataset cache (parquet: {parquet_exc}; pickle: {pickle_exc}). "
+                "Next run will fetch from the API again."
+            )
             return None, ""
 
 
